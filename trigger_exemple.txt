@@ -1,0 +1,6 @@
+CREATE TABLE historiques (
+    type_requete VARCHAR2(15),
+    date_operation DATE,
+    heure NUMBER,
+    utilisateur VARCHAR2(20)
+);
