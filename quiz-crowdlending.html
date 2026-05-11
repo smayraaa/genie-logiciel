@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Crowdlending</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0b0e17;
+    --surface: #13172a;
+    --surface2: #1a1f36;
+    --accent: #5ee8b5;
+    --accent2: #ff6b6b;
+    --accent3: #ffd166;
+    --text: #e8ecf4;
+    --muted: #6b7494;
+    --border: rgba(255,255,255,0.07);
+    --radius: 16px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -200px; left: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(94,232,181,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -100px; right: -100px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(255,107,107,0.05) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 680px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* INTRO SCREEN */
+  .screen { display: none; }
+  .screen.active { display: block; animation: fadeUp 0.4s ease; }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform: translateY(20px); }
+    to { opacity:1; transform: translateY(0); }
+  }
+
+  .intro-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(94,232,181,0.1);
+    border: 1px solid rgba(94,232,181,0.2);
+    border-radius: 100px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+  }
+
+  .intro-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.2rem, 6vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.08;
+    margin-bottom: 1.2rem;
+    letter-spacing: -0.02em;
+  }
+
+  .intro-title span {
+    color: var(--accent);
+    position: relative;
+  }
+
+  .intro-desc {
+    font-size: 16px;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 2.5rem;
+    max-width: 480px;
+  }
+
+  .intro-stats {
+    display: flex; gap: 2rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .intro-stat { text-align: center; }
+  .intro-stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--accent);
+    display: block;
+  }
+  .intro-stat-lbl { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .btn-start {
+    background: var(--accent);
+    color: #0b0e17;
+    border: none;
+    border-radius: 100px;
+    padding: 16px 40px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    letter-spacing: 0.02em;
+  }
+
+  .btn-start:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(94,232,181,0.3); }
+  .btn-start:active { transform: scale(0.97); }
+
+  /* QUIZ SCREEN */
+  .progress-bar {
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 100px;
+    margin-bottom: 2rem;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #38d9a9);
+    border-radius: 100px;
+    transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .quiz-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 1.75rem;
+  }
+  .q-counter {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .q-counter span { color: var(--accent); }
+
+  .score-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .score-badge b { color: var(--accent3); }
+
+  .question-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .question-emoji {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  .question-text {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1rem, 2.5vw, 1.2rem);
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--text);
+  }
+
+  .options-grid { display: flex; flex-direction: column; gap: 10px; }
+
+  .option-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    text-align: left;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;
+    color: var(--text);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    display: flex; align-items: center; gap: 12px;
+  }
+
+  .option-letter {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .option-btn:hover:not(:disabled) {
+    border-color: rgba(94,232,181,0.3);
+    background: rgba(94,232,181,0.04);
+    transform: translateX(4px);
+  }
+
+  .option-btn:hover:not(:disabled) .option-letter {
+    background: rgba(94,232,181,0.15);
+    color: var(--accent);
+  }
+
+  .option-btn.correct {
+    border-color: var(--accent);
+    background: rgba(94,232,181,0.08);
+    animation: correctPulse 0.3s ease;
+  }
+
+  .option-btn.correct .option-letter {
+    background: var(--accent);
+    color: #0b0e17;
+  }
+
+  .option-btn.wrong {
+    border-color: var(--accent2);
+    background: rgba(255,107,107,0.07);
+  }
+
+  .option-btn.wrong .option-letter {
+    background: var(--accent2);
+    color: #fff;
+  }
+
+  .option-btn:disabled { cursor: default; transform: none !important; }
+
+  @keyframes correctPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.01); }
+    100% { transform: scale(1); }
+  }
+
+  .feedback-box {
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-top: 1rem;
+    font-size: 13px;
+    line-height: 1.6;
+    display: none;
+    animation: fadeUp 0.25s ease;
+  }
+
+  .feedback-box.show { display: flex; gap: 10px; align-items: flex-start; }
+  .feedback-box.good { background: rgba(94,232,181,0.08); border: 1px solid rgba(94,232,181,0.2); color: var(--accent); }
+  .feedback-box.bad { background: rgba(255,107,107,0.07); border: 1px solid rgba(255,107,107,0.2); color: #ff8f8f; }
+  .feedback-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+  .btn-next {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 12px 28px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    margin-top: 1.25rem;
+    transition: border-color 0.15s, background 0.15s;
+    display: none;
+  }
+
+  .btn-next.show { display: inline-flex; align-items: center; gap: 8px; }
+  .btn-next:hover { border-color: rgba(94,232,181,0.4); background: rgba(94,232,181,0.06); }
+
+  /* RESULTS SCREEN */
+  .results-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2.5rem 2rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .result-emoji { font-size: 3.5rem; display: block; margin-bottom: 1rem; }
+
+  .result-score {
+    font-family: 'Syne', sans-serif;
+    font-size: 4rem;
+    font-weight: 800;
+    color: var(--accent);
+    display: block;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+
+  .result-label {
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 1.25rem;
+  }
+
+  .result-message {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text);
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  .answers-recap { margin-bottom: 1.5rem; }
+  .answers-recap-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 1rem;
+  }
+
+  .recap-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 8px;
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 13px;
+    text-align: left;
+  }
+
+  .recap-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .recap-dot.ok { background: var(--accent); }
+  .recap-dot.ko { background: var(--accent2); }
+  .recap-q { color: var(--muted); font-size: 12px; margin-bottom: 2px; }
+  .recap-a { color: var(--text); }
+
+  .btn-restart {
+    background: var(--accent);
+    color: #0b0e17;
+    border: none;
+    border-radius: 100px;
+    padding: 14px 36px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-restart:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(94,232,181,0.3); }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- INTRO -->
+  <div class="screen active" id="screen-intro">
+    <div class="intro-tag">💸 Finance participative</div>
+    <h1 class="intro-title">Testez vos<br>connaissances sur<br><span>le crowdlending</span></h1>
+    <p class="intro-desc">Un quiz rapide pour vérifier si vous avez bien compris le fonctionnement du prêt participatif entre particuliers et entreprises.</p>
+    <div class="intro-stats">
+      <div class="intro-stat"><span class="intro-stat-num">10</span><span class="intro-stat-lbl">Questions</span></div>
+      <div class="intro-stat"><span class="intro-stat-num">~5'</span><span class="intro-stat-lbl">Durée</span></div>
+      <div class="intro-stat"><span class="intro-stat-num">3</span><span class="intro-stat-lbl">Niveaux</span></div>
+    </div>
+    <button class="btn-start" onclick="startQuiz()">Commencer le quiz →</button>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="screen" id="screen-quiz">
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="quiz-header">
+      <span class="q-counter">Question <span id="q-num">1</span>/10</span>
+      <span class="score-badge">Score : <b id="score-disp">0</b></span>
+    </div>
+    <div class="question-card">
+      <span class="question-emoji" id="q-emoji">💡</span>
+      <p class="question-text" id="q-text"></p>
+    </div>
+    <div class="options-grid" id="options-grid"></div>
+    <div class="feedback-box" id="feedback-box">
+      <span class="feedback-icon" id="feedback-icon"></span>
+      <span id="feedback-text"></span>
+    </div>
+    <button class="btn-next" id="btn-next" onclick="nextQuestion()">Question suivante →</button>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="screen" id="screen-results">
+    <div class="results-card">
+      <span class="result-emoji" id="result-emoji"></span>
+      <span class="result-score" id="result-score"></span>
+      <p class="result-label" id="result-label"></p>
+      <p class="result-message" id="result-message"></p>
+    </div>
+    <div class="answers-recap">
+      <p class="answers-recap-title">Récapitulatif</p>
+      <div id="recap-list"></div>
+    </div>
+    <div style="text-align:center;">
+      <button class="btn-restart" onclick="restartQuiz()">↺ Recommencer</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const QUESTIONS = [
+  {
+    emoji: '💡',
+    text: 'Qu\'est-ce que le crowdlending ?',
+    options: [
+      'Un don d\'argent à une association',
+      'Un prêt d\'argent entre particuliers et entreprises via une plateforme en ligne',
+      'Un achat d\'actions en bourse',
+      'Un compte d\'épargne à taux fixe'
+    ],
+    correct: 1,
+    feedback: 'Le crowdlending (prêt participatif) permet à des particuliers de prêter directement de l\'argent à des entreprises, via une plateforme en ligne, en échange d\'intérêts.'
+  },
+  {
+    emoji: '💰',
+    text: 'Que reçoit l\'investisseur en contrepartie de son prêt ?',
+    options: [
+      'Des actions de l\'entreprise',
+      'Un cadeau ou une récompense',
+      'Des intérêts sur le capital prêté',
+      'Rien, c\'est un don'
+    ],
+    correct: 2,
+    feedback: 'L\'investisseur reçoit des intérêts dont le montant est fixé à l\'avance. Il perçoit chaque mois une part du capital et une part des intérêts.'
+  },
+  {
+    emoji: '📅',
+    text: 'À quelle fréquence l\'investisseur reçoit-il généralement ses remboursements ?',
+    options: [
+      'Une seule fois à la fin du prêt',
+      'Une fois par an',
+      'Chaque mois',
+      'Au hasard selon l\'entreprise'
+    ],
+    correct: 2,
+    feedback: 'Les remboursements se font généralement chaque mois, incluant une part du capital prêté et une part des intérêts.'
+  },
+  {
+    emoji: '⚠️',
+    text: 'Quel est le principal risque du crowdlending pour l\'investisseur ?',
+    options: [
+      'Perdre son accès à la plateforme',
+      'Que l\'emprunteur ne rembourse pas (perte partielle ou totale)',
+      'Payer trop d\'impôts',
+      'Recevoir trop d\'intérêts'
+    ],
+    correct: 1,
+    feedback: 'Le risque principal est le défaut de remboursement : l\'emprunteur peut rencontrer des difficultés financières et ne pas rembourser, entraînant une perte partielle ou totale du capital investi.'
+  },
+  {
+    emoji: '📊',
+    text: 'Quel projet est généralement considéré comme le plus risqué en crowdlending ?',
+    options: [
+      'Une grande entreprise cotée en bourse',
+      'Une PME locale établie depuis 10 ans',
+      'Une start-up innovante récente',
+      'Un projet d\'énergie solaire subventionné'
+    ],
+    correct: 2,
+    feedback: 'Les start-ups présentent un risque élevé car elles n\'ont pas encore prouvé leur modèle économique. En contrepartie, les taux d\'intérêt proposés sont plus élevés pour attirer les investisseurs.'
+  },
+  {
+    emoji: '🔗',
+    text: 'Par quel intermédiaire se font les transactions en crowdlending ?',
+    options: [
+      'Une banque traditionnelle',
+      'Une plateforme en ligne spécialisée',
+      'La bourse des valeurs',
+      'Un notaire'
+    ],
+    correct: 1,
+    feedback: 'Les transactions se font via des plateformes de crowdlending en ligne. Ces plateformes mettent en relation les investisseurs et les emprunteurs, et gèrent les remboursements.'
+  },
+  {
+    emoji: '🌱',
+    text: 'Quelle affirmation décrit le mieux l\'impact du crowdlending sur l\'économie ?',
+    options: [
+      'Il profite uniquement aux grandes entreprises',
+      'Il finance des projets abstraits sans lien avec la réalité',
+      'Il permet de financer directement des projets concrets de l\'économie réelle',
+      'Il remplace les marchés boursiers'
+    ],
+    correct: 2,
+    feedback: 'Le crowdlending permet à l\'argent des épargnants de financer directement des projets concrets : PME locales, énergies renouvelables, création d\'emplois... c\'est une finance de proximité.'
+  },
+  {
+    emoji: '🛡️',
+    text: 'Comment réduire le risque en crowdlending ?',
+    options: [
+      'Investir tout son argent dans un seul projet à fort rendement',
+      'Diversifier ses investissements sur plusieurs projets',
+      'Choisir uniquement les projets avec le plus haut taux d\'intérêt',
+      'Investir uniquement dans des start-ups'
+    ],
+    correct: 1,
+    feedback: 'La diversification est la clé ! En répartissant son argent sur plusieurs projets, l\'impact d\'un éventuel défaut de remboursement est limité à une partie du portefeuille.'
+  },
+  {
+    emoji: '📈',
+    text: 'Comparé à un compte d\'épargne classique, le crowdlending offre généralement...',
+    options: [
+      'Un rendement plus faible',
+      'Le même rendement',
+      'Un rendement plus élevé, mais avec un risque plus important',
+      'Une garantie de gain à 100%'
+    ],
+    correct: 2,
+    feedback: 'Le crowdlending offre des taux d\'intérêt souvent bien supérieurs à ceux des livrets d\'épargne. Cette différence compense le risque supplémentaire pris par l\'investisseur.'
+  },
+  {
+    emoji: '🤝',
+    text: 'Qui peut emprunter via le crowdlending ?',
+    options: [
+      'Uniquement des particuliers',
+      'Uniquement des grandes entreprises cotées',
+      'Des entreprises, PME ou porteurs de projets',
+      'Uniquement des associations à but non lucratif'
+    ],
+    correct: 2,
+    feedback: 'Le crowdlending est accessible à des entreprises de toutes tailles, des PME locales aux porteurs de projets innovants, pour financer leur développement sans passer par une banque traditionnelle.'
+  }
+];
+
+let current = 0, score = 0, answers = [], answered = false;
+
+function startQuiz() {
+  document.getElementById('screen-intro').classList.remove('active');
+  document.getElementById('screen-quiz').classList.add('active');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  answered = false;
+  const q = QUESTIONS[current];
+  document.getElementById('q-num').textContent = current + 1;
+  document.getElementById('score-disp').textContent = score;
+  document.getElementById('progress-fill').style.width = ((current / QUESTIONS.length) * 100) + '%';
+  document.getElementById('q-emoji').textContent = q.emoji;
+  document.getElementById('q-text').textContent = q.text;
+
+  const letters = ['A','B','C','D'];
+  const grid = document.getElementById('options-grid');
+  grid.innerHTML = q.options.map((opt, i) => `
+    <button class="option-btn" onclick="selectAnswer(${i})">
+      <span class="option-letter">${letters[i]}</span>
+      <span>${opt}</span>
+    </button>
+  `).join('');
+
+  const fb = document.getElementById('feedback-box');
+  fb.className = 'feedback-box';
+  document.getElementById('btn-next').classList.remove('show');
+}
+
+function selectAnswer(idx) {
+  if (answered) return;
+  answered = true;
+  const q = QUESTIONS[current];
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach(b => b.disabled = true);
+
+  const correct = idx === q.correct;
+  btns[idx].classList.add(correct ? 'correct' : 'wrong');
+  if (!correct) btns[q.correct].classList.add('correct');
+
+  if (correct) score++;
+  answers.push({ question: q.text, correct, chosen: q.options[idx], correctAns: q.options[q.correct] });
+
+  const fb = document.getElementById('feedback-box');
+  fb.className = 'feedback-box show ' + (correct ? 'good' : 'bad');
+  document.getElementById('feedback-icon').textContent = correct ? '✓' : '✗';
+  document.getElementById('feedback-text').textContent = q.feedback;
+
+  const btnNext = document.getElementById('btn-next');
+  btnNext.classList.add('show');
+  btnNext.textContent = current < QUESTIONS.length - 1 ? 'Question suivante →' : 'Voir mes résultats →';
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= QUESTIONS.length) { showResults(); return; }
+  document.getElementById('screen-quiz').classList.remove('active');
+  setTimeout(() => { renderQuestion(); document.getElementById('screen-quiz').classList.add('active'); }, 50);
+}
+
+function showResults() {
+  document.getElementById('screen-quiz').classList.remove('active');
+  document.getElementById('screen-results').classList.add('active');
+  document.getElementById('progress-fill').style.width = '100%';
+
+  const pct = score / QUESTIONS.length;
+  let emoji, message;
+  if (pct >= 0.9) { emoji = '🏆'; message = 'Excellent ! Vous maîtrisez parfaitement le crowdlending. Vous êtes prêt(e) à expliquer ce concept à tout le monde !'; }
+  else if (pct >= 0.7) { emoji = '🎉'; message = 'Très bien ! Vous avez une bonne compréhension du crowdlending. Quelques révisions sur les points manqués et ce sera parfait.'; }
+  else if (pct >= 0.5) { emoji = '📚'; message = 'Pas mal ! Vous avez saisi les bases. Relisez les explications des questions manquées pour bien consolider vos connaissances.'; }
+  else { emoji = '💪'; message = 'Le crowdlending est encore un peu flou. Pas de panique — relisez le cours et retentez le quiz !'; }
+
+  document.getElementById('result-emoji').textContent = emoji;
+  document.getElementById('result-score').textContent = score + '/10';
+  document.getElementById('result-label').textContent = `${Math.round(pct * 100)}% de bonnes réponses`;
+  document.getElementById('result-message').textContent = message;
+
+  const recap = document.getElementById('recap-list');
+  recap.innerHTML = answers.map((a, i) => `
+    <div class="recap-item">
+      <div class="recap-dot ${a.correct ? 'ok' : 'ko'}"></div>
+      <div>
+        <div class="recap-q">Q${i+1} — ${a.question}</div>
+        <div class="recap-a">${a.correct ? '✓ ' + a.chosen : '✗ ' + a.chosen + ' → ' + a.correctAns}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function restartQuiz() {
+  current = 0; score = 0; answers = [];
+  document.getElementById('screen-results').classList.remove('active');
+  document.getElementById('screen-quiz').classList.add('active');
+  renderQuestion();
+}
+</script>
+</body>
+</html>
